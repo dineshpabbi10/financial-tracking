@@ -1,0 +1,143 @@
+// Loonie data model. Money is always stored as integer cents.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                    String     @id @default(cuid())
+  name                  String
+  institution           String
+  bankPreset            String?
+  mask                  String?
+  type                  String // chequing | savings | credit | investment | loan | other
+  currency              String     @default("CAD")
+  currentBalanceCents   Int        @default(0)
+  availableBalanceCents Int?
+  csvMapping            String? // remembered CSV column mapping, JSON encoded
+  isDemo                Boolean    @default(false)
+  plaidItemId           String?
+  plaidItem             PlaidItem? @relation(fields: [plaidItemId], references: [id], onDelete: SetNull)
+  plaidAccountId        String?    @unique
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  transactions  Transaction[]
+  importBatches ImportBatch[]
+
+  @@index([institution])
+  @@index([plaidItemId])
+}
+
+model PlaidItem {
+  id                   String    @id @default(cuid())
+  itemId               String    @unique
+  accessTokenEncrypted String
+  institutionId        String?
+  institutionName      String?
+  cursor               String?
+  lastSyncedAt         DateTime?
+  lastSyncError        String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  accounts Account[]
+
+  @@index([institutionName])
+}
+
+model ImportBatch {
+  id                        String    @id @default(cuid())
+  accountId                 String
+  account                   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  filename                  String
+  fileKind                  String // csv | ofx | pdf | demo
+  bankPreset                String?
+  transactionsImported      Int
+  transactionsSkipped       Int
+  periodStart               DateTime?
+  periodEnd                 DateTime?
+  accountBalanceBeforeCents Int?
+  accountBalanceAfterCents  Int?
+  isDemo                    Boolean   @default(false)
+  createdAt                 DateTime  @default(now())
+
+  transactions Transaction[]
+
+  @@index([accountId, createdAt])
+}
+
+model Transaction {
+  id               String       @id @default(cuid())
+  accountId        String
+  account          Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  importBatchId    String?
+  importBatch      ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  importHash       String       @unique
+  externalId       String?
+  merchantName     String?
+  name             String
+  amountCents      Int // positive = money out, negative = money in
+  isoCurrency      String       @default("CAD")
+  date             DateTime
+  category         String       @default("other")
+  categoryOverride String?
+  pending          Boolean      @default(false)
+  sourceCategory   String?
+  balanceCents     Int?
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([accountId, date])
+  @@index([date])
+  @@index([category])
+  @@index([importBatchId])
+}
+
+model Budget {
+  id                String   @id @default(cuid())
+  category          String   @unique
+  monthlyLimitCents Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model RecurringSeries {
+  id                 String   @id @default(cuid())
+  merchantKey        String
+  merchantName       String
+  category           String
+  direction          String // expense | income
+  cadence            String // weekly | biweekly | monthly | quarterly
+  intervalDays       Int
+  averageAmountCents Int
+  lastAmountCents    Int
+  lastDate           DateTime
+  nextExpectedDate   DateTime
+  confidence         Float
+  transactionCount   Int
+  isDismissed        Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
+
+  @@unique([merchantKey, direction])
+  @@index([nextExpectedDate])
+}

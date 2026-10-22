@@ -1,0 +1,43 @@
+{
+  "name": "loonie",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Canadian personal finance PWA — track spending, budgets, and upcoming bills.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "jose": "^6.2.13",
+    "lucide-react": "^0.468.0",
+    "next": "16.4.2",
+    "papaparse": "^5.7.0",
+    "plaid": "^49.0.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-plaid-link": "^5.0.0",
+    "server-only": "^0.0.1",
+    "unpdf": "^1.9.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.0.0",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prisma": "6.19.3",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
